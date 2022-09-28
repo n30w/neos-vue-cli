@@ -70,5 +70,11 @@ finish!
 */
 
 func main() {
+	v := Gists{
+		packageJSON: "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
+		indexHTML:   "https://gist.github.com/b9f38f17a0b2cf3f28d2715011e03fb1.git",
+		indexTS:     "https://gist.github.com/3bb7a5789c91bc0229dcbfe209f0fc67.git",
+		templateVUE: "https://gist.github.com/94f18653a1e0468de83faa163d7cdbcf.git",
+	}
 	fmt.Println("vim-go")
 }
