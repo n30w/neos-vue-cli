@@ -1,18 +1,19 @@
 package main
 
-// yarn add vue rimraf
-// yarn add --dev parcel
-
 // Gists to download
 type Gists struct {
-	packageJSON string
-	indexHTML   string
-	indexTS     string
-	templateVUE string
-	postcssrc   string
-	popperJS    string
+	packageJSON   string
+	indexHTML     string
+	indexTS       string
+	templateVUE   string
+	postcssrc     string
+	popperJS      string
+	bootstrapSCSS string
+	tailwindSCSS  string
+	tailwindconf  string
 }
 
+// Organizations for CSS data, like Tailwind and Bootstrap
 type CSS struct {
 	tailwind  Tailwind
 	bootstrap Bootstrap

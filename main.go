@@ -3,81 +3,29 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 )
 
 // TODO: add dependencies like fatih/color and yacspin
 
-// Tutorial: https://levelup.gitconnected.com/tutorial-how-to-create-a-cli-tool-in-golang-a0fd980264f
-
-/*
-
-This will be a program dedicated to creating the environment
-required to setup a NeosWebDev.
-
-It is a command line tool
-
-The course of action follows:
-
-1. run neosvuecli create [options]
-	- options are:
-		- (REQUIRED) name : name of project
-		- directory : if not stated it will just create one in the current
-		  directory
-		- private : sets whether you want the project to be private
-		- license : type of license
-		- t : add tailwind
-		- b : add bootstrap
-
-
-Things that the command should do:
-
-git init (name)
-
-cd (name)
-
-yarn add --dev parcel && yarn add vue (https://classic.yarnpkg.com/lang/en/docs/cli/init/)
-
-mkdir src && mkdir src/components
-
-download gists
-
-mv gists
-
-add tailwind or bootstrap
-
-touch tsconfig.json
-
-git add .
-
-git commit -m "initial commit"
-
-git push origin main
-
-finish!
-
-*/
+const MAXARGS = 1
 
 var (
 	css         CSS
 	projectName string
 
 	gists = Gists{
-		packageJSON: "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
-		indexHTML:   "https://gist.github.com/b9f38f17a0b2cf3f28d2715011e03fb1.git",
-		indexTS:     "https://gist.github.com/3bb7a5789c91bc0229dcbfe209f0fc67.git",
-		templateVUE: "https://gist.github.com/94f18653a1e0468de83faa163d7cdbcf.git",
-		postcssrc:   "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
-		popperJS:    "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
-	}
-
-	commands = Commands{
-		git:   []string{"init", "add", "commit", "-m", "inital commit", "push"},
-		mkdir: []string{"src", "src/components"},
-		// touch: []string{"src/tsconfig.json"},
-		cd: []string{"src"},
-		// mv:    []string{"-t", "./src index.ts index.scss", "Template.vue src/components/"},
-		yarn: []string{"yarn add --dev ", "yarn add "},
+		packageJSON:   "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
+		indexHTML:     "https://gist.github.com/b9f38f17a0b2cf3f28d2715011e03fb1.git",
+		indexTS:       "https://gist.github.com/3bb7a5789c91bc0229dcbfe209f0fc67.git",
+		templateVUE:   "https://gist.github.com/94f18653a1e0468de83faa163d7cdbcf.git",
+		postcssrc:     "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
+		popperJS:      "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
+		bootstrapSCSS: "https://gist.github.com/b29599aa95343ad7ff3a704c0e9b2d81.git",
+		tailwindSCSS:  "https://gist.github.com/35a637a7e185333b08c730b7d64189d3.git",
+		tailwindconf:  "https://gist.github.com/ed36d206090bd1faeea8d0c1921e19fc.git",
 	}
 
 	coreDependencies = [4]string{
@@ -87,66 +35,45 @@ var (
 		"rimraf",
 	}
 
-	// destinations = map[string]string{
-	// 	"src":               "src",
-	// 	"src/components":    "src/components",
-	// 	"src/tsconfig.json": "src/tsconfig.json",
-	// 	"./src":             "./src",
-	// }
-
 	tailwind = Tailwind{
 		postcssrc:    gists.postcssrc,
 		configJS:     "",
-		indexSCSS:    "@tailwind base;@tailwind components;@tailwind utilities;",
+		indexSCSS:    gists.tailwindSCSS,
 		dependencies: []string{"tailwindcss", "postcss"},
 	}
 
 	bootstrap = Bootstrap{
 		popperJS:      gists.popperJS,
-		bootstrapSCSS: "@import '../node_modules/bootstrap/scss/functions';@import '../node_modules/bootstrap/scss/variables';@import '../node_modules/bootstrap/scss/mixins';@import '../node_modules/bootstrap/scss/root';@import '../node_modules/bootstrap/scss/reboot';@import '../node_modules/bootstrap/scss/type';@import '../node_modules/bootstrap/scss/images';@import '../node_modules/bootstrap/scss/containers';@import '../node_modules/bootstrap/scss/grid';",
+		bootstrapSCSS: gists.bootstrapSCSS,
 		dependencies:  []string{"bootstrap", "@popperjs/core"},
 	}
 )
 
-// func notEnoughArgs() {
-// 	if len(os.Args) < 2 {
-// 		fmt.Println("Expected 'create' subcommand!")
-// 		os.Exit(1)
-// 	}
-// }
-
-func init() {
-
-}
-
 func main() {
-	const MAXARGS = 1
-	fmt.Println("Initializing...")
-
-	// createCmd := flag.NewFlagSet("create", flag.ExitOnError)
 	createTailwind := flag.Bool("t", false, "select tailwind as CSS")
 	createBootstrap := flag.Bool("b", false, "select bootstrap as CSS")
 	createVanilla := flag.Bool("v", false, "select vanilla CSS")
 
 	flag.Parse()
-	fmt.Println(*createVanilla)
+
 	if len(flag.Args()) > MAXARGS {
 		fmt.Println("Too many arguments provided! Please provide only at max 1")
 		os.Exit(1)
 	}
 
+	// If there's a name, set it
 	if len(flag.Args()) != 0 {
 		projectName = flag.Args()[0]
 	} else {
-		projectName = "default"
+		projectName = "Default"
 	}
-	fmt.Println(projectName)
-	Exec("mkdir watda")
-	pwd, _ := os.Getwd()
+
+	fmt.Println("Creating project", projectName+"!")
+	cd := "cd " + projectName + " && "
+
 	// Initialize Repo
 	Exec("git init " + projectName)
-	Exec("cd " + projectName)
-	fmt.Println(pwd)
+
 	// Install all core dependencies
 	{
 		fullDependencyList := ""
@@ -156,11 +83,11 @@ func main() {
 			}
 		}
 
-		Exec("yard add --dev " + coreDependencies[0])
-		Exec("yarn add " + fullDependencyList)
+		Exec(cd + "yard add --dev " + coreDependencies[0])
+		Exec(cd + "yarn add " + fullDependencyList)
 	}
 
-	// Download gists
+	// Download main files
 	{
 		g := "git clone "
 		Exec("mkdir src")
@@ -174,32 +101,36 @@ func main() {
 		Exec("mv Template.vue ./src/components")
 		Exec("mv index.ts ./src")
 	}
-	// createCmd.Parse(os.Args[2:])
-	if *createTailwind {
-		css.tailwind = tailwind
-		//write this to tailwind.config.js
-		//content: [
-		//"./src/**/*.{html, js, ts, jsx, tsx, vue}",
-		//"./src/*.vue",
-		//"./src/components/*.vue",
-		//],
 
-	} else if *createBootstrap {
-		css.bootstrap = bootstrap
-		// write this to index.ts
-		// import * as bootstrap from 'bootstrap';
-
-	} else if *createVanilla {
-		Exec("touch src/index.scss")
-		fmt.Println("Finished!")
+	// Create CSS files
+	{
+		if *createTailwind {
+			css.tailwind = tailwind
+		} else if *createBootstrap {
+			css.bootstrap = bootstrap
+		} else if *createVanilla {
+			Exec("touch src/index.scss")
+			fmt.Println("Finished!")
+		}
 	}
+}
 
-	// switch os.Args[1] {
-	// case "create":
-	// case "help":
-	// 	fmt.Println("Usage: neosvuecli (create | help) (-t | -b) (project name)")
-	// 	os.Exit(1)
-	// default:
-	// 	notEnoughArgs()
-	// }
+// Executes commands
+// Go Formatting string literal: https://stackoverflow.com/questions/17779371/golang-given-a-string-output-an-equivalent-golang-string-literal
+// Also: https://groups.google.com/g/golang-nuts/c/ggd3ww3ZKcI
+// And: https://www.digitalocean.com/community/tutorials/an-introduction-to-working-with-strings-in-go
+func Exec(s string) {
+	// Go Logging an error
+	// https://www.honeybadger.io/blog/golang-logging/
+	file, _ := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	fmt.Println("Executing " + s + "...")
+	cmd := exec.Command("bash", "-c", s)
+	// If the file doesn't exist, create it or append to the file
+	stdout, err := cmd.Output()
+	log.SetOutput(file)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Println("Error occured, please check logs 😭😭😭")
+	}
+	fmt.Println(string(stdout))
 }
