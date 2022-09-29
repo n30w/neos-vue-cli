@@ -1,12 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"flag"
+	"fmt"
+	"os"
+)
 
 // TODO: add dependencies like fatih/color and yacspin
 
 // Tutorial: https://levelup.gitconnected.com/tutorial-how-to-create-a-cli-tool-in-golang-a0fd980264f
-
-// Please bundle add file templates like .json and .vue and .html to binary.
 
 /*
 
@@ -34,30 +36,17 @@ git init (name)
 
 cd (name)
 
-yarn init --yes
-
-or to initalize a skip and private project
-yarn init -yp
-
 yarn add --dev parcel && yarn add vue (https://classic.yarnpkg.com/lang/en/docs/cli/init/)
+
+mkdir src && mkdir src/components
+
+download gists
+
+mv gists
 
 add tailwind or bootstrap
 
 touch tsconfig.json
-
-touch index.html
-
-write to index.html
-
-mkdir src && cd src
-
-touch App.vue index.scss index.ts
-
-write to App.vue and write to index.ts
-
-mkdir components && touch Temp.vue
-
-write to Temp.vue (Temp.vue have same content as App.vue)
 
 git add .
 
@@ -69,12 +58,148 @@ finish!
 
 */
 
-func main() {
-	v := Gists{
+var (
+	css         CSS
+	projectName string
+
+	gists = Gists{
 		packageJSON: "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
 		indexHTML:   "https://gist.github.com/b9f38f17a0b2cf3f28d2715011e03fb1.git",
 		indexTS:     "https://gist.github.com/3bb7a5789c91bc0229dcbfe209f0fc67.git",
 		templateVUE: "https://gist.github.com/94f18653a1e0468de83faa163d7cdbcf.git",
+		postcssrc:   "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
+		popperJS:    "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
 	}
-	fmt.Println("vim-go")
+
+	commands = Commands{
+		git:   []string{"init", "add", "commit", "-m", "inital commit", "push"},
+		mkdir: []string{"src", "src/components"},
+		// touch: []string{"src/tsconfig.json"},
+		cd: []string{"src"},
+		// mv:    []string{"-t", "./src index.ts index.scss", "Template.vue src/components/"},
+		yarn: []string{"yarn add --dev ", "yarn add "},
+	}
+
+	coreDependencies = [4]string{
+		"parcel",
+		"vue",
+		"vue-router@4",
+		"rimraf",
+	}
+
+	// destinations = map[string]string{
+	// 	"src":               "src",
+	// 	"src/components":    "src/components",
+	// 	"src/tsconfig.json": "src/tsconfig.json",
+	// 	"./src":             "./src",
+	// }
+
+	tailwind = Tailwind{
+		postcssrc:    gists.postcssrc,
+		configJS:     "",
+		indexSCSS:    "@tailwind base;@tailwind components;@tailwind utilities;",
+		dependencies: []string{"tailwindcss", "postcss"},
+	}
+
+	bootstrap = Bootstrap{
+		popperJS:      gists.popperJS,
+		bootstrapSCSS: "@import '../node_modules/bootstrap/scss/functions';@import '../node_modules/bootstrap/scss/variables';@import '../node_modules/bootstrap/scss/mixins';@import '../node_modules/bootstrap/scss/root';@import '../node_modules/bootstrap/scss/reboot';@import '../node_modules/bootstrap/scss/type';@import '../node_modules/bootstrap/scss/images';@import '../node_modules/bootstrap/scss/containers';@import '../node_modules/bootstrap/scss/grid';",
+		dependencies:  []string{"bootstrap", "@popperjs/core"},
+	}
+)
+
+// func notEnoughArgs() {
+// 	if len(os.Args) < 2 {
+// 		fmt.Println("Expected 'create' subcommand!")
+// 		os.Exit(1)
+// 	}
+// }
+
+func init() {
+
+}
+
+func main() {
+	const MAXARGS = 1
+	fmt.Println("Initializing...")
+
+	// createCmd := flag.NewFlagSet("create", flag.ExitOnError)
+	createTailwind := flag.Bool("t", false, "select tailwind as CSS")
+	createBootstrap := flag.Bool("b", false, "select bootstrap as CSS")
+	createVanilla := flag.Bool("v", false, "select vanilla CSS")
+
+	flag.Parse()
+	fmt.Println(*createVanilla)
+	if len(flag.Args()) > MAXARGS {
+		fmt.Println("Too many arguments provided! Please provide only at max 1")
+		os.Exit(1)
+	}
+
+	if len(flag.Args()) != 0 {
+		projectName = flag.Args()[0]
+	} else {
+		projectName = "default"
+	}
+	fmt.Println(projectName)
+	Exec("mkdir watda")
+	pwd, _ := os.Getwd()
+	// Initialize Repo
+	Exec("git init " + projectName)
+	Exec("cd " + projectName)
+	fmt.Println(pwd)
+	// Install all core dependencies
+	{
+		fullDependencyList := ""
+		for _, d := range coreDependencies {
+			if d != "parcel" {
+				fullDependencyList += fullDependencyList + d + " "
+			}
+		}
+
+		Exec("yard add --dev " + coreDependencies[0])
+		Exec("yarn add " + fullDependencyList)
+	}
+
+	// Download gists
+	{
+		g := "git clone "
+		Exec("mkdir src")
+		Exec(g + gists.packageJSON)
+		Exec(g + gists.indexHTML)
+		Exec(g + gists.indexTS)
+		Exec(g + gists.templateVUE)
+
+		// Move to appropriate folders
+		Exec("mkdir src/components")
+		Exec("mv Template.vue ./src/components")
+		Exec("mv index.ts ./src")
+	}
+	// createCmd.Parse(os.Args[2:])
+	if *createTailwind {
+		css.tailwind = tailwind
+		//write this to tailwind.config.js
+		//content: [
+		//"./src/**/*.{html, js, ts, jsx, tsx, vue}",
+		//"./src/*.vue",
+		//"./src/components/*.vue",
+		//],
+
+	} else if *createBootstrap {
+		css.bootstrap = bootstrap
+		// write this to index.ts
+		// import * as bootstrap from 'bootstrap';
+
+	} else if *createVanilla {
+		Exec("touch src/index.scss")
+		fmt.Println("Finished!")
+	}
+
+	// switch os.Args[1] {
+	// case "create":
+	// case "help":
+	// 	fmt.Println("Usage: neosvuecli (create | help) (-t | -b) (project name)")
+	// 	os.Exit(1)
+	// default:
+	// 	notEnoughArgs()
+	// }
 }
