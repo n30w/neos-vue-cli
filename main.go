@@ -130,7 +130,7 @@ func Exec(s string) {
 	log.SetOutput(file)
 	if err != nil {
 		log.Fatal(err)
-		fmt.Println("Error occured, please check logs 😭😭😭")
+		fmt.Println("Error occured, please check logs 😭")
 	}
 	fmt.Println(string(stdout))
 }
