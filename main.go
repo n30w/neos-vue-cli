@@ -10,22 +10,23 @@ import (
 
 // TODO: add dependencies like fatih/color and yacspin
 
-const MAXARGS = 1
+const (
+	MAXARGS = 1
+)
 
 var (
 	css         CSS
 	projectName string
 
 	gists = Gists{
-		packageJSON:   "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
-		indexHTML:     "https://gist.github.com/b9f38f17a0b2cf3f28d2715011e03fb1.git",
-		indexTS:       "https://gist.github.com/3bb7a5789c91bc0229dcbfe209f0fc67.git",
-		templateVUE:   "https://gist.github.com/94f18653a1e0468de83faa163d7cdbcf.git",
-		postcssrc:     "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
-		popperJS:      "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
-		bootstrapSCSS: "https://gist.github.com/b29599aa95343ad7ff3a704c0e9b2d81.git",
-		tailwindSCSS:  "https://gist.github.com/35a637a7e185333b08c730b7d64189d3.git",
-		tailwindconf:  "https://gist.github.com/ed36d206090bd1faeea8d0c1921e19fc.git",
+		PackageJSON:   "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
+		IndexTS:       "https://gist.github.com/3bb7a5789c91bc0229dcbfe209f0fc67.git",
+		TemplateVUE:   "https://gist.github.com/94f18653a1e0468de83faa163d7cdbcf.git",
+		Postcssrc:     "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
+		PopperJS:      "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
+		BootstrapSCSS: "https://gist.github.com/b29599aa95343ad7ff3a704c0e9b2d81.git",
+		TailwindSCSS:  "https://gist.github.com/35a637a7e185333b08c730b7d64189d3.git",
+		Tailwindconf:  "https://gist.github.com/ed36d206090bd1faeea8d0c1921e19fc.git",
 	}
 
 	coreDependencies = [4]string{
@@ -36,15 +37,15 @@ var (
 	}
 
 	tailwind = Tailwind{
-		postcssrc:    gists.postcssrc,
+		postcssrc:    gists.Postcssrc,
 		configJS:     "",
-		indexSCSS:    gists.tailwindSCSS,
+		indexSCSS:    gists.TailwindSCSS,
 		dependencies: []string{"tailwindcss", "postcss"},
 	}
 
 	bootstrap = Bootstrap{
-		popperJS:      gists.popperJS,
-		bootstrapSCSS: gists.bootstrapSCSS,
+		popperJS:      gists.PopperJS,
+		bootstrapSCSS: gists.BootstrapSCSS,
 		dependencies:  []string{"bootstrap", "@popperjs/core"},
 	}
 )
@@ -89,16 +90,17 @@ func main() {
 
 	// Download main files
 	{
-		g := "git clone "
 		Exec("mkdir src")
-		Exec(g + gists.packageJSON)
-		Exec(g + gists.indexHTML)
-		Exec(g + gists.indexTS)
-		Exec(g + gists.templateVUE)
+		Exec(gists.Clone(
+			gists.PackageJSON,
+			gists.IndexHTML,
+			gists.IndexTS,
+			gists.TemplateVUE,
+		))
 
 		// Move to appropriate folders
-		Exec("mkdir src/components")
-		Exec("mv Template.vue ./src/components")
+		Exec(fmt.Sprintf("mkdir ./%s/src/components", projectName))
+		Exec(fmt.Sprintf("mv Template.vue ./%s/src/components", projectName))
 		Exec("mv index.ts ./src")
 	}
 
