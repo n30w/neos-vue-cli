@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/theckman/yacspin"
 )
@@ -11,17 +12,14 @@ import (
 // Add yacspin
 
 const (
-	MAXARGS = 3    // Max num of args in command
-	TESTING = true // Are we in testing mode? proj file
+	MAXARGS = 3     // Max num of args in command
+	TESTING = false // Are we in testing mode? proj file
 )
 
 var (
-	css          CSS
 	projectName  string
 	spinner, err = yacspin.New(SpinnerConfig)
-
-	// Commands
-	cd = "cd " + projectName + " && "
+	cd           = "cd " + projectName + " && "
 
 	gists = Gists{
 		PackageJSON:   "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
@@ -61,6 +59,8 @@ var (
 		bootstrapSCSS: gists.BootstrapSCSS,
 		dependencies:  []string{"bootstrap", "@popperjs/core"},
 	}
+
+	css CSS
 )
 
 func init() {
@@ -91,7 +91,7 @@ func main() {
 		if len(os.Args) > 2 {
 			projectName = os.Args[2]
 		} else {
-			projectName = "default"
+			projectName = "Default"
 		}
 
 		// Check if Directory exists
@@ -109,89 +109,115 @@ func main() {
 	Joy.Println("Creating project " + projectName)
 	Exec("git init " + projectName)
 
-	spinner.Start()
-
 	// Install all core dependencies
-	{
-		fullDependencyList := ""
-		for _, d := range coreDependencies {
-			if d != "parcel" {
-				fullDependencyList += fullDependencyList + d + " "
+	spinWrap(
+		spinner,
+		11,
+		" Installing core dependencies",
+		func() {
+			fullDependencyList := ""
+			for _, d := range coreDependencies {
+				if d != "parcel" {
+					fullDependencyList += fullDependencyList + d + " "
+				}
 			}
-		}
 
-		Exec(cd + "yarn add --dev " + coreDependencies[0])
-		Exec(cd + "yarn add " + fullDependencyList)
-	}
+			Exec(cd + "yarn add --dev " + coreDependencies[0])
+			Exec(cd + "yarn add " + fullDependencyList)
+
+		},
+	)
 
 	// Download + organize main files
 	{
 		p := fmt.Sprintf("./%s/", projectName)
 		Exec(fmt.Sprintf("mkdir %ssrc", p))
 
-		// Download gists
-		clone, ids := gists.Clone(requiredGists[:])
-		Exec(clone)
+		spinner.Frequency(45 * time.Millisecond)
 
-		// With ids, move contents out of folders
-		Exec(
-			func() string {
-				final := ""
-				for _, id := range ids {
-					final += fmt.Sprintf("mv ./%s/* ", id) + p + " && "
-				}
-				return final[0 : len(final)-4]
-			}(),
+		// Download and organize gists
+		spinWrap(
+			spinner,
+			43,
+			" Downloading gists",
+			func() {
+				// Download gists
+				clone, ids := gists.Clone(requiredGists[:])
+				Exec(clone)
+
+				// With ids, move contents out of folders
+				Exec(
+					func() string {
+						final := ""
+						for _, id := range ids {
+							final += fmt.Sprintf("mv ./%s/* ", id) + p + " && "
+						}
+						return final[0 : len(final)-4]
+					}(),
+				)
+
+				// Then delete gist download folders
+				Exec(
+					func() string {
+						final := ""
+						for _, id := range ids {
+							final += "rm -rf " + fmt.Sprintf("./%s", id) + " && "
+						}
+						return final[0 : len(final)-4]
+					}(),
+				)
+			},
 		)
 
-		// Then delete gist download folders
-		Exec(
-			func() string {
-				final := ""
-				for _, id := range ids {
-					final += "rm -rf " + fmt.Sprintf("./%s", id) + " && "
-				}
-				return final[0 : len(final)-4]
-			}(),
-		)
+		spinner.Frequency(80 * time.Millisecond)
 
-		// Commands to organize files
-		Exec(
-			func() string {
-				final := ""
-				commands := [5]string{
-					"mkdir " + p + "src/components",
-					"cp " + p + "Template.vue " + p + "src/",
-					"mv " + p + "src/Template.vue " + p + "src/App.vue",
-					"mv " + p + "Template.vue " + p + "src/components/",
-					"mv " + p + "index.ts " + p + "src/",
-				}
+		// Move and organize files
+		spinWrap(
+			spinner,
+			27,
+			" Moving things around",
+			func() {
+				Exec(
+					func() string {
+						final := ""
+						commands := [5]string{
+							"mkdir " + p + "src/components",
+							"cp " + p + "Template.vue " + p + "src/",
+							"mv " + p + "src/Template.vue " + p + "src/App.vue",
+							"mv " + p + "Template.vue " + p + "src/components/",
+							"mv " + p + "index.ts " + p + "src/",
+						}
 
-				for _, cmd := range commands {
-					final += cmd + " && "
-				}
+						for _, cmd := range commands {
+							final += cmd + " && "
+						}
 
-				return final[0 : len(final)-4]
-			}(),
+						return final[0 : len(final)-4]
+					}(),
+				)
+			},
 		)
 	}
+
 	// Create CSS files
-	{
-		flag.Parse() // Must be called before parsing any flags
-		if *createTailwind {
-			css.tailwind = tailwind
-		} else if *createBootstrap {
-			css.bootstrap = bootstrap
-		} else if *createVanilla {
-			Exec(fmt.Sprintf("touch ./%s/src/index.scss", projectName))
-		}
-		Exec(cd + "yarn")
-	}
+	spinWrap(
+		spinner,
+		44,
+		" Adding CSS",
+		func() {
+			flag.Parse() // Must be called before parsing any flags
+			if *createTailwind {
+				css.tailwind = tailwind
+			} else if *createBootstrap {
+				css.bootstrap = bootstrap
+			} else if *createVanilla {
+				Exec(fmt.Sprintf("touch ./%s/src/index.scss", projectName))
+			}
+			Exec(cd + "yarn")
+		},
+	)
 
-	spinner.Stop()
-
-	Joy.Println("Finished ✅")
-	fmt.Println("Enjoy your project, I guess... I hate web development")
+	Joy.Println("Finished")
 	testing()
 }
 
@@ -202,4 +228,12 @@ func testing() {
 		Exec("rm -rf " + projectName)
 		os.Exit(0)
 	}
+}
+
+func spinWrap(sp *yacspin.Spinner, c int, s string, f func()) {
+	sp.CharSet(yacspin.CharSets[c])
+	sp.Prefix(s + " ")
+	sp.Start()
+	f()
+	sp.Stop()
 }

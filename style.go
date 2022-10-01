@@ -16,11 +16,11 @@ var (
 	Execution     = color.New(color.FgMagenta, color.Bold)
 
 	SpinnerConfig = yacspin.Config{
-		Frequency:       100 * time.Millisecond,
-		CharSet:         yacspin.CharSets[27],
-		Suffix:          " doing its thang",
-		SuffixAutoColon: true,
-		StopCharacter:   "✓",
-		StopColors:      []string{"fgGreen"},
+		Frequency:     100 * time.Millisecond,
+		Prefix:        " ",
+		Message:       "",
+		SpinnerAtEnd:  true,
+		StopCharacter: "✓",
+		StopColors:    []string{"fgGreen"},
 	}
 )
