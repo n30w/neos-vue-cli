@@ -5,19 +5,23 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fatih/color"
+	"github.com/theckman/yacspin"
 )
 
-// TODO: add dependencies like fatih/color and yacspin
+// Add yacspin
 
 const (
-	MAXARGS = 1    // Max num of args in command
-	TESTING = true // Are we in testing mode? proj file
+	MAXARGS = 1     // Max num of args in command
+	TESTING = false // Are we in testing mode? proj file
 )
 
 var (
-	css         CSS
-	projectName string
+	css          CSS
+	projectName  = "default"
+	spinner, err = yacspin.New(SpinnerConfig)
+
+	// Commands
+	cd = "cd " + projectName + " && "
 
 	gists = Gists{
 		PackageJSON:   "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
@@ -57,21 +61,30 @@ var (
 		bootstrapSCSS: gists.BootstrapSCSS,
 		dependencies:  []string{"bootstrap", "@popperjs/core"},
 	}
-
-	// gPoint *[4]string
 )
 
 func main() {
+
+	if TESTING {
+		TestingIsTrue.Println("TESTING is TRUE...")
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	createTailwind := flag.Bool("t", false, "select tailwind as CSS")
 	createBootstrap := flag.Bool("b", false, "select bootstrap as CSS")
 	createVanilla := flag.Bool("v", false, "select vanilla CSS")
+
 	flag.Parse()
+
 	// Check all requirements for a command
 	{
-		warn := color.New(color.FgRed, color.Bold)
 		// Too many args
 		if len(flag.Args()) > MAXARGS {
-			warn.Println("🤪 Too many arguments provided silly! Please provide only at max 1")
+			Warn.Println("🤪 Too many arguments provided silly! Please provide only at max 1")
 			os.Exit(1)
 		}
 
@@ -86,7 +99,7 @@ func main() {
 		}
 
 		if noFlags {
-			warn.Println("You're stupid, dumb, and everything in-between. Sorry, not sorry.")
+			Warn.Println("You're stupid, dumb, and everything in-between. Sorry, not sorry.")
 			fmt.Println("🤔 This is the usage:")
 			fmt.Println("$ neos-vue-cli -[CSS flavor] [Project Name]")
 			fmt.Println("    -t  Tailwindcss\n    -b  Bootstrap\n    -v  Vanilla")
@@ -97,19 +110,26 @@ func main() {
 		// If there's a name, set it
 		if len(flag.Args()) != 0 {
 			projectName = flag.Args()[0]
-		} else {
-			projectName = "Default"
 		}
 	}
 
-	// Does a project by the same name already exist?
-	// Check that
+	// Check if Directory exists and Initialize Repo
+	// https://programming-idioms.org/idiom/212/check-if-folder-exists/3702/go
+	{
+		info, err := os.Stat("./" + projectName)
+		dirExists := !os.IsNotExist(err) && info.IsDir()
 
-	// Initialize Repo
-	Exec("git init " + projectName)
-	d := color.New(color.FgYellow, color.Bold)
-	d.Println("Creating project " + projectName + "!")
-	cd := "cd " + projectName + " && "
+		if dirExists {
+			fmt.Println("A directory already exists for " + "./" + projectName + " in current directory!")
+			os.Exit(1)
+		} else {
+			// Initialize Repo
+			Joy.Println("Creating project " + projectName + "!")
+			Exec("git init " + projectName)
+		}
+	}
+
+	spinner.Start()
 
 	// Install all core dependencies
 	{
@@ -144,7 +164,7 @@ func main() {
 			}(),
 		)
 
-		// Then delete folders
+		// Then delete gist download folders
 		Exec(
 			func() string {
 				final := ""
@@ -155,11 +175,25 @@ func main() {
 			}(),
 		)
 
-		Exec(fmt.Sprintf("mkdir " + p + "src/components"))
-		Exec("cp " + p + "Template.vue " + p + "src/")
-		Exec("mv " + p + "src/Template.vue " + p + "src/App.vue")
-		Exec("mv " + p + "Template.vue " + p + "src/components/")
-		Exec("mv " + p + "index.ts " + p + "src/")
+		// Commands to organize files
+		Exec(
+			func() string {
+				final := ""
+				commands := [5]string{
+					"mkdir " + p + "src/components",
+					"cp " + p + "Template.vue " + p + "src/",
+					"mv " + p + "src/Template.vue " + p + "src/App.vue",
+					"mv " + p + "Template.vue " + p + "src/components/",
+					"mv " + p + "index.ts " + p + "src/",
+				}
+
+				for _, cmd := range commands {
+					final += cmd + " && "
+				}
+
+				return final[0 : len(final)-4]
+			}(),
+		)
 	}
 
 	// Create CSS files
@@ -170,20 +204,21 @@ func main() {
 			css.bootstrap = bootstrap
 		} else if *createVanilla {
 			Exec(fmt.Sprintf("touch ./%s/src/index.scss", projectName))
-			fmt.Println("✅ Finished ✅")
-			fmt.Println("Enjoy your project, I guess... I hate web development")
-			// testing()
 		}
+		Exec(cd + "yarn")
 	}
 
+	spinner.Stop()
+
+	Joy.Println("✅ Finished ✅")
+	fmt.Println("Enjoy your project, I guess... I hate web development")
+	testing()
 }
 
 func testing() {
 	if TESTING {
-		t := color.New(color.BgRed, color.FgHiWhite, color.Bold)
-		y := color.New(color.FgYellow, color.Bold)
-		t.Print("TESTING is TRUE...")
-		y.Println(" Deleting created directory ./" + projectName)
+		TestingIsTrue.Print("TESTING is TRUE...")
+		Action.Println(" Deleting created directory ./" + projectName)
 		Exec("rm -rf " + projectName)
 		os.Exit(0)
 	}

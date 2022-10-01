@@ -7,7 +7,6 @@ type Gists struct {
 	PackageJSON, IndexHTML, IndexTS, TemplateVUE, Postcssrc, PopperJS, BootstrapSCSS, TailwindSCSS, Tailwindconf string
 }
 
-// If I had a repo struct, I could make an interface for this clone function then have both Repo and Gist implement this method
 func (g *Gists) Clone(gists []string) (string, []string) {
 	final := ""
 	ids := []string{}
