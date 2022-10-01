@@ -7,6 +7,7 @@ import (
 	"os/exec"
 )
 
+// Executes commands
 func Exec(s string) {
 
 	// Go Logging an error
@@ -28,7 +29,6 @@ func Exec(s string) {
 	}
 }
 
-// Executes commands
 // Go Formatting string literal: https://stackoverflow.com/questions/17779371/golang-given-a-string-output-an-equivalent-golang-string-literal
 // Also: https://groups.google.com/g/golang-nuts/c/ggd3ww3ZKcI
 // And: https://www.digitalocean.com/community/tutorials/an-introduction-to-working-with-strings-in-go

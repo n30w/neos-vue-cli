@@ -9,8 +9,6 @@ import (
 	"github.com/theckman/yacspin"
 )
 
-// Add yacspin
-
 const (
 	MAXARGS = 3     // Max num of args in command
 	TESTING = false // Are we in testing mode? proj file
@@ -48,16 +46,16 @@ var (
 	}
 
 	tailwind = Tailwind{
-		postcssrc:    gists.Postcssrc,
-		configJS:     "",
-		indexSCSS:    gists.TailwindSCSS,
-		dependencies: []string{"tailwindcss", "postcss"},
+		Postcssrc:    gists.Postcssrc,
+		ConfigJS:     "",
+		IndexSCSS:    gists.TailwindSCSS,
+		Dependencies: []string{"tailwindcss", "postcss"},
 	}
 
 	bootstrap = Bootstrap{
-		popperJS:      gists.PopperJS,
-		bootstrapSCSS: gists.BootstrapSCSS,
-		dependencies:  []string{"bootstrap", "@popperjs/core"},
+		PopperJS:      gists.PopperJS,
+		BootstrapSCSS: gists.BootstrapSCSS,
+		Dependencies:  []string{"bootstrap", "@popperjs/core"},
 	}
 
 	css CSS
@@ -110,7 +108,7 @@ func main() {
 	Exec("git init " + projectName)
 
 	// Install all core dependencies
-	spinWrap(
+	SpinWrap(
 		spinner,
 		11,
 		" Installing core dependencies",
@@ -136,7 +134,7 @@ func main() {
 		spinner.Frequency(45 * time.Millisecond)
 
 		// Download and organize gists
-		spinWrap(
+		SpinWrap(
 			spinner,
 			43,
 			" Downloading gists",
@@ -172,7 +170,7 @@ func main() {
 		spinner.Frequency(80 * time.Millisecond)
 
 		// Move and organize files
-		spinWrap(
+		SpinWrap(
 			spinner,
 			27,
 			" Moving things around",
@@ -200,16 +198,16 @@ func main() {
 	}
 
 	// Create CSS files
-	spinWrap(
+	SpinWrap(
 		spinner,
 		44,
 		" Adding CSS",
 		func() {
 			flag.Parse() // Must be called before parsing any flags
 			if *createTailwind {
-				css.tailwind = tailwind
+				css.Tailwind = tailwind
 			} else if *createBootstrap {
-				css.bootstrap = bootstrap
+				css.Bootstrap = bootstrap
 			} else if *createVanilla {
 				Exec(fmt.Sprintf("touch ./%s/src/index.scss", projectName))
 			}
@@ -228,12 +226,4 @@ func testing() {
 		Exec("rm -rf " + projectName)
 		os.Exit(0)
 	}
-}
-
-func spinWrap(sp *yacspin.Spinner, c int, s string, f func()) {
-	sp.CharSet(yacspin.CharSets[c])
-	sp.Prefix(s + " ")
-	sp.Start()
-	f()
-	sp.Stop()
 }

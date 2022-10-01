@@ -20,19 +20,19 @@ func (g *Gists) Clone(gists []string) (string, []string) {
 
 // Organizations for CSS data, like Tailwind and Bootstrap
 type CSS struct {
-	tailwind  Tailwind
-	bootstrap Bootstrap
+	Tailwind  Tailwind
+	Bootstrap Bootstrap
 }
 
 type Tailwind struct {
-	postcssrc    string
-	configJS     string
-	indexSCSS    string
-	dependencies []string
+	Postcssrc    string
+	ConfigJS     string
+	IndexSCSS    string
+	Dependencies []string
 }
 
 type Bootstrap struct {
-	popperJS      string
-	bootstrapSCSS string
-	dependencies  []string
+	PopperJS      string
+	BootstrapSCSS string
+	Dependencies  []string
 }

@@ -24,3 +24,11 @@ var (
 		StopColors:    []string{"fgGreen"},
 	}
 )
+
+func SpinWrap(sp *yacspin.Spinner, c int, s string, f func()) {
+	sp.CharSet(yacspin.CharSets[c])
+	sp.Prefix(s + " ")
+	sp.Start()
+	f()
+	sp.Stop()
+}
