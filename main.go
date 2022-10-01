@@ -24,6 +24,7 @@ var (
 		IndexHTML:     "https://gist.github.com/b9f38f17a0b2cf3f28d2715011e03fb1.git",
 		IndexTS:       "https://gist.github.com/3bb7a5789c91bc0229dcbfe209f0fc67.git",
 		TemplateVUE:   "https://gist.github.com/94f18653a1e0468de83faa163d7cdbcf.git",
+		Gitignore:     "https://gist.github.com/d9b4506685d58cbe0ad715a55a922f3d.git",
 		Postcssrc:     "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
 		PopperJS:      "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
 		BootstrapSCSS: "https://gist.github.com/b29599aa95343ad7ff3a704c0e9b2d81.git",
@@ -31,11 +32,12 @@ var (
 		Tailwindconf:  "https://gist.github.com/ed36d206090bd1faeea8d0c1921e19fc.git",
 	}
 
-	requiredGists = [4]string{
+	requiredGists = [5]string{
 		gists.PackageJSON,
 		gists.IndexHTML,
 		gists.IndexTS,
 		gists.TemplateVUE,
+		gists.Gitignore,
 	}
 
 	coreDependencies = [4]string{
@@ -128,7 +130,7 @@ func main() {
 
 	// Download + organize main files
 	{
-		p := fmt.Sprintf("./%s/", projectName)
+		p := fmt.Sprintf("%s/", projectName) // Project directory
 		Exec(fmt.Sprintf("mkdir %ssrc", p))
 
 		spinner.Frequency(45 * time.Millisecond)
@@ -148,7 +150,7 @@ func main() {
 					func() string {
 						final := ""
 						for _, id := range ids {
-							final += fmt.Sprintf("mv ./%s/* ", id) + p + " && "
+							final += fmt.Sprintf("mv %s/* %s && ", id, p)
 						}
 						return final[0 : len(final)-4]
 					}(),
@@ -159,7 +161,7 @@ func main() {
 					func() string {
 						final := ""
 						for _, id := range ids {
-							final += "rm -rf " + fmt.Sprintf("./%s", id) + " && "
+							final += "rm -rf " + id + " && "
 						}
 						return final[0 : len(final)-4]
 					}(),
@@ -178,12 +180,13 @@ func main() {
 				Exec(
 					func() string {
 						final := ""
-						commands := [5]string{
+						commands := [6]string{
 							"mkdir " + p + "src/components",
 							"cp " + p + "Template.vue " + p + "src/",
 							"mv " + p + "src/Template.vue " + p + "src/App.vue",
 							"mv " + p + "Template.vue " + p + "src/components/",
 							"mv " + p + "index.ts " + p + "src/",
+							"mv " + p + "temp.gitignore " + p + `.gitignore`,
 						}
 
 						for _, cmd := range commands {
@@ -211,10 +214,9 @@ func main() {
 			} else if *createVanilla {
 				Exec(fmt.Sprintf("touch ./%s/src/index.scss", projectName))
 			}
-			Exec(cd + "yarn")
+			Exec("cd " + projectName + " && yarn")
 		},
 	)
-
 	Joy.Println("Finished")
 	testing()
 }

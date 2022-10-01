@@ -4,7 +4,7 @@ import "fmt"
 
 // Gists to download
 type Gists struct {
-	PackageJSON, IndexHTML, IndexTS, TemplateVUE, Postcssrc, PopperJS, BootstrapSCSS, TailwindSCSS, Tailwindconf string
+	PackageJSON, IndexHTML, IndexTS, TemplateVUE, Gitignore, Postcssrc, PopperJS, BootstrapSCSS, TailwindSCSS, Tailwindconf string
 }
 
 func (g *Gists) Clone(gists []string) (string, []string) {
