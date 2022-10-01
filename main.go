@@ -11,13 +11,13 @@ import (
 // Add yacspin
 
 const (
-	MAXARGS = 1     // Max num of args in command
-	TESTING = false // Are we in testing mode? proj file
+	MAXARGS = 3    // Max num of args in command
+	TESTING = true // Are we in testing mode? proj file
 )
 
 var (
 	css          CSS
-	projectName  = "default"
+	projectName  string
 	spinner, err = yacspin.New(SpinnerConfig)
 
 	// Commands
@@ -63,12 +63,14 @@ var (
 	}
 )
 
-func main() {
-
+func init() {
 	if TESTING {
 		TestingIsTrue.Println("TESTING is TRUE...")
 	}
+}
 
+func main() {
+	// For spinner
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -78,56 +80,34 @@ func main() {
 	createBootstrap := flag.Bool("b", false, "select bootstrap as CSS")
 	createVanilla := flag.Bool("v", false, "select vanilla CSS")
 
-	flag.Parse()
-
 	// Check all requirements for a command
 	{
-		// Too many args
-		if len(flag.Args()) > MAXARGS {
-			Warn.Println("🤪 Too many arguments provided silly! Please provide only at max 1")
-			os.Exit(1)
-		}
-
-		// No args supplied
-		noFlags := true
-		flagCheck := []bool{*createTailwind, *createBootstrap, *createVanilla}
-
-		for _, flag := range flagCheck {
-			if flag {
-				noFlags = false
-			}
-		}
-
-		if noFlags {
-			Warn.Println("You're stupid, dumb, and everything in-between. Sorry, not sorry.")
-			fmt.Println("🤔 This is the usage:")
-			fmt.Println("$ neos-vue-cli -[CSS flavor] [Project Name]")
-			fmt.Println("    -t  Tailwindcss\n    -b  Bootstrap\n    -v  Vanilla")
-
+		if len(os.Args) > MAXARGS || len(os.Args) == 1 {
+			Warn.Println("Invalid number of arguments provided!")
 			os.Exit(1)
 		}
 
 		// If there's a name, set it
-		if len(flag.Args()) != 0 {
-			projectName = flag.Args()[0]
+		if len(os.Args) > 2 {
+			projectName = os.Args[2]
+		} else {
+			projectName = "default"
 		}
-	}
 
-	// Check if Directory exists and Initialize Repo
-	// https://programming-idioms.org/idiom/212/check-if-folder-exists/3702/go
-	{
+		// Check if Directory exists
+		// https://programming-idioms.org/idiom/212/check-if-folder-exists/3702/go
 		info, err := os.Stat("./" + projectName)
 		dirExists := !os.IsNotExist(err) && info.IsDir()
 
 		if dirExists {
 			fmt.Println("A directory already exists for " + "./" + projectName + " in current directory!")
 			os.Exit(1)
-		} else {
-			// Initialize Repo
-			Joy.Println("Creating project " + projectName + "!")
-			Exec("git init " + projectName)
 		}
 	}
+
+	// Initialize Project Repository
+	Joy.Println("Creating project " + projectName)
+	Exec("git init " + projectName)
 
 	spinner.Start()
 
@@ -195,9 +175,9 @@ func main() {
 			}(),
 		)
 	}
-
 	// Create CSS files
 	{
+		flag.Parse() // Must be called before parsing any flags
 		if *createTailwind {
 			css.tailwind = tailwind
 		} else if *createBootstrap {
@@ -210,7 +190,7 @@ func main() {
 
 	spinner.Stop()
 
-	Joy.Println("✅ Finished ✅")
+	Joy.Println("Finished ✅")
 	fmt.Println("Enjoy your project, I guess... I hate web development")
 	testing()
 }

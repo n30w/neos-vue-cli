@@ -11,14 +11,14 @@ var (
 	// Console colors
 	Warn          = color.New(color.FgRed, color.Bold)
 	Joy           = color.New(color.FgYellow, color.Bold)
-	Action        = color.New(color.FgYellow, color.Bold)
+	Action        = color.New(color.FgHiGreen, color.Bold, color.BgBlack)
 	TestingIsTrue = color.New(color.BgRed, color.FgHiWhite, color.Bold)
 	Execution     = color.New(color.FgMagenta, color.Bold)
 
 	SpinnerConfig = yacspin.Config{
 		Frequency:       100 * time.Millisecond,
 		CharSet:         yacspin.CharSets[27],
-		Suffix:          "doing its thang",
+		Suffix:          " doing its thang",
 		SuffixAutoColon: true,
 		StopCharacter:   "✓",
 		StopColors:      []string{"fgGreen"},
