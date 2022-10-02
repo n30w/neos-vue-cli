@@ -1,5 +1,8 @@
 package main
 
+// TODO:
+// - Add P5.JS vue support. That thing sucks to setup.
+
 import (
 	"flag"
 	"fmt"
@@ -10,16 +13,15 @@ import (
 )
 
 const (
-	MAXARGS = 3     // Max num of args in command
-	TESTING = false // Are we in testing mode? proj file
+	Maxargs = 3 // Max num of args in command
 )
 
 var (
-	projectName  string
+	ProjectName  string
 	spinner, err = yacspin.New(SpinnerConfig)
-	cd           = "cd " + projectName + " && "
-
-	gists = Gists{
+	cd           = "cd " + ProjectName + " && "
+	Tmpdir       = "" // Access /tmp directory DOES NOT CURRENTLY WORK
+	gists        = Gists{
 		PackageJSON:   "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
 		IndexHTML:     "https://gist.github.com/b9f38f17a0b2cf3f28d2715011e03fb1.git",
 		IndexTS:       "https://gist.github.com/3bb7a5789c91bc0229dcbfe209f0fc67.git",
@@ -63,12 +65,6 @@ var (
 	css CSS
 )
 
-func init() {
-	if TESTING {
-		TestingIsTrue.Println("TESTING is TRUE...")
-	}
-}
-
 func main() {
 	// For spinner
 	if err != nil {
@@ -82,32 +78,34 @@ func main() {
 
 	// Check all requirements for a command
 	{
-		if len(os.Args) > MAXARGS || len(os.Args) == 1 {
+		if len(os.Args) > Maxargs || len(os.Args) == 1 {
 			Warn.Println("Invalid number of arguments provided!")
 			os.Exit(1)
 		}
 
 		// If there's a name, set it
 		if len(os.Args) > 2 {
-			projectName = os.Args[2]
+			ProjectName = os.Args[2]
 		} else {
-			projectName = "Default"
+			ProjectName = "Default"
 		}
 
 		// Check if Directory exists
 		// https://programming-idioms.org/idiom/212/check-if-folder-exists/3702/go
-		info, err := os.Stat("./" + projectName)
+		info, err := os.Stat("./" + ProjectName)
 		dirExists := !os.IsNotExist(err) && info.IsDir()
 
 		if dirExists {
-			fmt.Println("A directory already exists for " + "./" + projectName + " in current directory!")
+			fmt.Println("A directory already exists for " + "./" + ProjectName + " in current directory!")
 			os.Exit(1)
 		}
 	}
 
+	flag.Parse()
+
 	// Initialize Project Repository
-	Joy.Println("Creating project " + projectName)
-	Exec("git init " + projectName)
+	Joy.Println("Creating project " + ProjectName)
+	Exec("git init " + ProjectName)
 
 	// Install all core dependencies
 	SpinWrap(
@@ -130,7 +128,7 @@ func main() {
 
 	// Download + organize main files
 	{
-		p := fmt.Sprintf("%s/", projectName) // Project directory
+		p := fmt.Sprintf("%s/", ProjectName)
 		Exec(fmt.Sprintf("mkdir %ssrc", p))
 
 		spinner.Frequency(45 * time.Millisecond)
@@ -140,32 +138,29 @@ func main() {
 			spinner,
 			43,
 			" Downloading gists",
+			// Download gists
+			// Possibly do it with go routines?
 			func() {
-				// Download gists
+				// IDs are the names of the downloaded folders
 				clone, ids := gists.Clone(requiredGists[:])
 				Exec(clone)
 
-				// With ids, move contents out of folders
-				Exec(
-					func() string {
-						final := ""
-						for _, id := range ids {
-							final += fmt.Sprintf("mv %s/* %s && ", id, p)
-						}
-						return final[0 : len(final)-4]
-					}(),
-				)
+				// With IDs, move contents out of folders
+				for _, id := range ids {
+					files, _ := os.ReadDir(id)
+					fmt.Println(files[1].Name())
+					os.Rename(
+						fmt.Sprintf("./%s/%s", id, files[1].Name()),
+						fmt.Sprintf("./%s/%s", ProjectName, files[1].Name()),
+					)
 
-				// Then delete gist download folders
-				Exec(
-					func() string {
-						final := ""
-						for _, id := range ids {
-							final += "rm -rf " + id + " && "
-						}
-						return final[0 : len(final)-4]
-					}(),
-				)
+					// Then delete gist download folders
+					err = os.RemoveAll(id)
+					if err != nil {
+						fmt.Println(err)
+						os.Exit(1)
+					}
+				}
 			},
 		)
 
@@ -177,25 +172,25 @@ func main() {
 			27,
 			" Moving things around",
 			func() {
-				Exec(
-					func() string {
-						final := ""
-						commands := [6]string{
-							"mkdir " + p + "src/components",
-							"cp " + p + "Template.vue " + p + "src/",
-							"mv " + p + "src/Template.vue " + p + "src/App.vue",
-							"mv " + p + "Template.vue " + p + "src/components/",
-							"mv " + p + "index.ts " + p + "src/",
-							"mv " + p + "temp.gitignore " + p + `.gitignore`,
-						}
+				// Exec(
+				// 	func() string {
+				// 		final := ""
+				// 		commands := [6]string{
+				// 			"mkdir " + p + "src/components",
+				// 			"cp " + p + "Template.vue " + p + "src/",
+				// 			"mv " + p + "src/Template.vue " + p + "src/App.vue",
+				// 			"mv " + p + "Template.vue " + p + "src/components/",
+				// 			"mv " + p + "index.ts " + p + "src/",
+				// 			"mv " + p + "temp.gitignore " + p + `.gitignore`,
+				// 		}
 
-						for _, cmd := range commands {
-							final += cmd + " && "
-						}
+				// 		for _, cmd := range commands {
+				// 			final += cmd + " && "
+				// 		}
 
-						return final[0 : len(final)-4]
-					}(),
-				)
+				// 		return final[0 : len(final)-4]
+				// 	}(),
+				// )
 			},
 		)
 	}
@@ -206,26 +201,15 @@ func main() {
 		44,
 		" Adding CSS",
 		func() {
-			flag.Parse() // Must be called before parsing any flags
 			if *createTailwind {
 				css.Tailwind = tailwind
 			} else if *createBootstrap {
 				css.Bootstrap = bootstrap
 			} else if *createVanilla {
-				Exec(fmt.Sprintf("touch ./%s/src/index.scss", projectName))
+				Exec(fmt.Sprintf("touch ./%s/src/index.scss", ProjectName))
 			}
-			Exec("cd " + projectName + " && yarn")
+			Exec("cd " + ProjectName + " && yarn")
 		},
 	)
 	Joy.Println("Finished")
-	testing()
-}
-
-func testing() {
-	if TESTING {
-		TestingIsTrue.Print("TESTING is TRUE...")
-		Action.Println(" Deleting created directory ./" + projectName)
-		Exec("rm -rf " + projectName)
-		os.Exit(0)
-	}
 }
