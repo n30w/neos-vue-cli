@@ -1,6 +1,9 @@
 # Neo's Vue CLI
 
-This is my CLI tool to setup my custom development environment.
+This is my CLI tool to setup my custom development environment. Make sure you have upx installed. Install with: `brew install --build-from-source upx`
+per [This github thread](https://gist.github.com/somecuitears/c6b88944e3e59c598a57812084d373d6).
+
+Build with `make build`
 
 ## Links
 
