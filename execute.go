@@ -1,26 +1,25 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
 )
 
-// Executes commands
+// Command wrapper with error handling
 func Exec(s string) {
-	// Go Logging an error
-	// https://www.honeybadger.io/blog/golang-logging/
-	// If the file doesn't exist, create it or append to the file
+	// Go Logging an error: https://www.honeybadger.io/blog/golang-logging/
 	file, _ := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+
+	// The good stuff
 	cmd := exec.Command("bash", "-c", s)
 	_, err := cmd.Output()
 	log.SetOutput(file)
 	if err != nil {
-		fmt.Println("Error occured, please check logs 😭")
-		fmt.Fprintln(cmd.Stderr)
+		Warn.Println("Error occured, please check logs 😭")
+		Warn.Fprintln(cmd.Stderr)
 		Warn.Printf("Removing %s", ProjectName)
-		exec.Command("bash", "-c", fmt.Sprintf("rm -rf %s", ProjectName))
+		os.RemoveAll(ProjectName)
 		log.Fatal(err)
 	}
 }

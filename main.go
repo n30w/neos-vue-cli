@@ -6,6 +6,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -101,11 +102,14 @@ func main() {
 		}
 	}
 
-	flag.Parse()
-
 	// Initialize Project Repository
-	Joy.Println("Creating project " + ProjectName)
+	Execution.Println("Creating project " + ProjectName)
+	if err := os.MkdirAll(ProjectName+"/src/components", 0750); err != nil {
+		Warn.Println("Error occurred. Check logs stinky!")
+		log.Fatal(err)
+	}
 	Exec("git init " + ProjectName)
+	Action.Println("Git repo initialized!")
 
 	// Install all core dependencies
 	SpinWrap(
@@ -122,78 +126,76 @@ func main() {
 
 			Exec(cd + "yarn add --dev " + coreDependencies[0])
 			Exec(cd + "yarn add " + fullDependencyList)
-
 		},
 	)
 
-	// Download + organize main files
-	{
-		p := fmt.Sprintf("%s/", ProjectName)
-		Exec(fmt.Sprintf("mkdir %ssrc", p))
+	spinner.Frequency(45 * time.Millisecond)
+	p := fmt.Sprintf("%s/", ProjectName)
 
-		spinner.Frequency(45 * time.Millisecond)
+	// Download and organize gists
+	SpinWrap(
+		spinner,
+		43,
+		" Downloading gists", // Maybe do with goroutines?
+		func() {
 
-		// Download and organize gists
-		SpinWrap(
-			spinner,
-			43,
-			" Downloading gists",
-			// Download gists
-			// Possibly do it with go routines?
-			func() {
-				// IDs are the names of the downloaded folders
-				clone, ids := gists.Clone(requiredGists[:])
-				Exec(clone)
+			// IDs are the names of the downloaded folders
 
-				// With IDs, move contents out of folders
-				for _, id := range ids {
-					files, _ := os.ReadDir(id)
-					fmt.Println(files[1].Name())
-					os.Rename(
-						fmt.Sprintf("./%s/%s", id, files[1].Name()),
-						fmt.Sprintf("./%s/%s", ProjectName, files[1].Name()),
-					)
+			clone, ids := gists.Clone(requiredGists[:])
+			Exec(clone)
 
-					// Then delete gist download folders
-					err = os.RemoveAll(id)
-					if err != nil {
-						fmt.Println(err)
-						os.Exit(1)
-					}
+			// With IDs, move contents out of folders
+			// I had done this before with Exec(), but this is more
+			// idiomatic, and also simpler
+
+			for _, id := range ids {
+				files, _ := os.ReadDir(id)
+				os.Rename(
+					fmt.Sprintf("./%s/%s", id, files[1].Name()),
+					fmt.Sprintf("./%s/%s", ProjectName, files[1].Name()),
+				)
+
+				// Then delete gist download folders
+				if err := os.RemoveAll(id); err != nil {
+					Warn.Println(err)
+					os.Exit(1)
 				}
-			},
-		)
+			}
+		},
+	)
 
-		spinner.Frequency(80 * time.Millisecond)
+	spinner.Frequency(80 * time.Millisecond)
+	Exec("cp " + p + "Template.vue " + p + "src/")
 
-		// Move and organize files
-		SpinWrap(
-			spinner,
-			27,
-			" Moving things around",
-			func() {
-				// Exec(
-				// 	func() string {
-				// 		final := ""
-				// 		commands := [6]string{
-				// 			"mkdir " + p + "src/components",
-				// 			"cp " + p + "Template.vue " + p + "src/",
-				// 			"mv " + p + "src/Template.vue " + p + "src/App.vue",
-				// 			"mv " + p + "Template.vue " + p + "src/components/",
-				// 			"mv " + p + "index.ts " + p + "src/",
-				// 			"mv " + p + "temp.gitignore " + p + `.gitignore`,
-				// 		}
+	// Move and organize downloaded files
+	SpinWrap(
+		spinner,
+		27,
+		" Moving things around",
+		func() {
+			Exec(
 
-				// 		for _, cmd := range commands {
-				// 			final += cmd + " && "
-				// 		}
+				// Don't mind me.
+				// Just gonna put these commands here, ha.
 
-				// 		return final[0 : len(final)-4]
-				// 	}(),
-				// )
-			},
-		)
-	}
+				func() string {
+					final := ""
+					commands := [4]string{
+						"mv " + p + "src/Template.vue " + p + "src/App.vue",
+						"mv " + p + "Template.vue " + p + "src/components/",
+						"mv " + p + "index.ts " + p + "src/",
+						"mv " + p + "temp.gitignore " + p + `.gitignore`,
+					}
+
+					for _, cmd := range commands {
+						final += cmd + " && "
+					}
+
+					return final[0 : len(final)-4]
+				}(),
+			)
+		},
+	)
 
 	// Create CSS files
 	SpinWrap(
@@ -201,15 +203,27 @@ func main() {
 		44,
 		" Adding CSS",
 		func() {
+			flag.Parse()
 			if *createTailwind {
 				css.Tailwind = tailwind
+				Action.Println(" Tailwind, huh? Good choice.")
 			} else if *createBootstrap {
 				css.Bootstrap = bootstrap
 			} else if *createVanilla {
 				Exec(fmt.Sprintf("touch ./%s/src/index.scss", ProjectName))
 			}
+		},
+	)
+
+	// Initalize yarn
+	SpinWrap(
+		spinner,
+		31,
+		" Initalizing yarn",
+		func() {
 			Exec("cd " + ProjectName + " && yarn")
 		},
 	)
-	Joy.Println("Finished")
+
+	Joy.Println("Environment setup complete")
 }

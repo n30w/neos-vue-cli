@@ -10,7 +10,7 @@ type Gists struct {
 func (g *Gists) Clone(gists []string) (string, []string) {
 	final := ""
 	ids := []string{}
-	gc := Tmpdir + " git clone " // clone into ~/Downloads
+	gc := "git clone " // TODO: Make this thing a temp directory via os pkg
 	for _, gist := range gists {
 		final += gc + fmt.Sprintf("%s && ", gist)
 		ids = append(ids, gist[24:len(gist)-4])

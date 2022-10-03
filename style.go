@@ -7,11 +7,14 @@ import (
 	"github.com/theckman/yacspin"
 )
 
+// TODO: Possibly add Uilive pkg to it?
+// can display live output line by line via carriage return
+
 var (
 	// Console colors
 	Warn          = color.New(color.FgRed, color.Bold)
 	Joy           = color.New(color.FgYellow, color.Bold)
-	Action        = color.New(color.FgHiGreen, color.Bold, color.BgBlack)
+	Action        = color.New(color.FgHiGreen, color.Bold)
 	TestingIsTrue = color.New(color.BgRed, color.FgHiWhite, color.Bold)
 	Execution     = color.New(color.FgMagenta, color.Bold)
 
