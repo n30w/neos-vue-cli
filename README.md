@@ -14,3 +14,4 @@ Build with `make build`
 - [Creating an executable](https://stackoverflow.com/questions/28018591/how-do-i-make-a-ruby-script-into-a-bash-command)
 - [Creating a makefile for Go](https://earthly.dev/blog/golang-makefile/)
 - [Getting started with generics in Go](https://www.infoworld.com/article/3646036/get-started-with-generics-in-go.html)
+- [String Builder](https://www.calhoun.io/concatenating-and-building-strings-in-go/)

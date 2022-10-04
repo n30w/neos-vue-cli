@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/theckman/yacspin"
@@ -174,12 +175,9 @@ func main() {
 		" Moving things around",
 		func() {
 			Exec(
-
-				// Don't mind me.
-				// Just gonna put these commands here, ha.
-
 				func() string {
-					final := ""
+
+					var sb strings.Builder
 					commands := [4]string{
 						"mv " + p + "src/Template.vue " + p + "src/App.vue",
 						"mv " + p + "Template.vue " + p + "src/components/",
@@ -188,10 +186,9 @@ func main() {
 					}
 
 					for _, cmd := range commands {
-						final += cmd + " && "
+						sb.WriteString(cmd + " && ")
 					}
-
-					return final[0 : len(final)-4]
+					return sb.String()[0 : len(sb.String())-4]
 				}(),
 			)
 		},
@@ -206,7 +203,7 @@ func main() {
 			flag.Parse()
 			if *createTailwind {
 				css.Tailwind = tailwind
-				Action.Println(" Tailwind, huh? Good choice.")
+				Joy.Println(" Tailwind, huh? Good choice.")
 			} else if *createBootstrap {
 				css.Bootstrap = bootstrap
 			} else if *createVanilla {
