@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -21,6 +22,24 @@ func Exec(s string) {
 		Warn.Printf("Removing %s", ProjectName)
 		os.RemoveAll(ProjectName)
 		log.Fatal(err)
+	}
+}
+
+// Inserts a file with a specified line. Useful for CSS.
+// Function based on https://zetcode.com/golang/writefile/
+func Insert(text string) {
+	f, err := os.Create(fmt.Sprintf("%s/src/index.scss", ProjectName))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+
+	_, err2 := f.WriteString(fmt.Sprintf("%s\n", text))
+
+	if err2 != nil {
+		log.Fatal(err2)
 	}
 }
 

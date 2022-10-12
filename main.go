@@ -74,8 +74,11 @@ func main() {
 		return
 	}
 
-	createTailwind := flag.Bool("t", false, "select tailwind as CSS")
-	createBootstrap := flag.Bool("b", false, "select bootstrap as CSS")
+	createTailwind := flag.Bool("t", false, "select Tailwind as CSS")
+	createBootstrap := flag.Bool("b", false, "select Bootstrap as CSS")
+	createBulma := flag.Bool("u", false, "select Bulma CSS")
+	createSimple := flag.Bool("s", false, "select Simple CSS")
+	// createP5 := flag.Bool("p", false, "select P5 Project")
 	createVanilla := flag.Bool("v", false, "select vanilla CSS")
 
 	// Check all requirements for a command
@@ -203,11 +206,16 @@ func main() {
 			flag.Parse()
 			if *createTailwind {
 				css.Tailwind = tailwind
-				Joy.Println(" Tailwind, huh? Good choice.")
 			} else if *createBootstrap {
 				css.Bootstrap = bootstrap
+			} else if *createBulma {
+				Exec("cd " + ProjectName + " && yarn add bulma")
+				Insert("@import '~bulma';\nhtml { scrollbar-gutter: stable;}\n")
+			} else if *createSimple {
+				Exec("cd " + ProjectName + " && yarn add simpledotcss")
+				Insert("@import url('../node_modules/simpledotcss/simple.min.css');\nhtml { scrollbar-gutter: stable;}\n")
 			} else if *createVanilla {
-				Exec(fmt.Sprintf("touch ./%s/src/index.scss", ProjectName))
+				Insert("html { scrollbar-gutter: stable;}\n")
 			}
 		},
 	)
