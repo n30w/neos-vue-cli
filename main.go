@@ -227,6 +227,7 @@ func main() {
 		" Initalizing yarn",
 		func() {
 			Exec("cd " + ProjectName + " && yarn")
+			Exec("cd " + ProjectName + " && touch README.md")
 		},
 	)
 
