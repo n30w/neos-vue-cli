@@ -64,7 +64,8 @@ var (
 		Dependencies:  []string{"bootstrap", "@popperjs/core"},
 	}
 
-	css CSS
+	css       CSS
+	cssInsert = "html { scrollbar-gutter: stable both-edges; }\n"
 )
 
 func main() {
@@ -101,7 +102,7 @@ func main() {
 		dirExists := !os.IsNotExist(err) && info.IsDir()
 
 		if dirExists {
-			fmt.Println("A directory already exists for " + "./" + ProjectName + " in current directory!")
+			Warn.Println("A directory already exists for " + "./" + ProjectName + " in current directory!")
 			os.Exit(1)
 		}
 	}
@@ -210,12 +211,12 @@ func main() {
 				css.Bootstrap = bootstrap
 			} else if *createBulma {
 				Exec("cd " + ProjectName + " && yarn add bulma")
-				Insert("@import '~bulma';\nhtml { scrollbar-gutter: stable;}\n")
+				Insert("@import '~bulma';\n" + cssInsert)
 			} else if *createSimple {
 				Exec("cd " + ProjectName + " && yarn add simpledotcss")
-				Insert("@import url('../node_modules/simpledotcss/simple.min.css');\nhtml { scrollbar-gutter: stable;}\n")
+				Insert("@import url('../node_modules/simpledotcss/simple.min.css');\n\n" + cssInsert)
 			} else if *createVanilla {
-				Insert("html { scrollbar-gutter: stable;}\n")
+				Insert(cssInsert)
 			}
 		},
 	)
