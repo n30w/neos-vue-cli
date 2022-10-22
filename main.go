@@ -20,14 +20,22 @@ const (
 
 var (
 	ProjectName  string
+	TmpDir       string
+	insertText   string
+	css          CSS
 	spinner, err = yacspin.New(SpinnerConfig)
 	cd           = "cd " + ProjectName + " && "
-	Tmpdir       = "" // Access /tmp directory DOES NOT CURRENTLY WORK
-	gists        = Gists{
+	cmd          = ""
+	cssInsert    = "html { scrollbar-gutter: stable both-edges; }\n"
+	gists        = &Gists{
 		PackageJSON:   "https://gist.github.com/b6e6e41894e0d6b3ef7aba33214415ce.git",
 		IndexHTML:     "https://gist.github.com/b9f38f17a0b2cf3f28d2715011e03fb1.git",
 		IndexTS:       "https://gist.github.com/3bb7a5789c91bc0229dcbfe209f0fc67.git",
+		RouterTS:      "https://gist.github.com/dfc984c549436801c8baa0f81509d58a.git",
+		SketchTS:      "https://gist.github.com/377dc488457d4559027bd86b0cb8c293.git",
 		TemplateVUE:   "https://gist.github.com/94f18653a1e0468de83faa163d7cdbcf.git",
+		AppVUE:        "https://gist.github.com/fbce0f55f9d6f2d220a92de6b12b415e.git",
+		SketchVUE:     "https://gist.github.com/04cdaab8de42293f08cdb43aa1c6a2a4.git",
 		Gitignore:     "https://gist.github.com/d9b4506685d58cbe0ad715a55a922f3d.git",
 		Postcssrc:     "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
 		PopperJS:      "https://gist.github.com/202c5d3b1bb088b615a243690124a3bd.git",
@@ -36,11 +44,13 @@ var (
 		Tailwindconf:  "https://gist.github.com/ed36d206090bd1faeea8d0c1921e19fc.git",
 	}
 
-	requiredGists = [5]string{
+	requiredGists = [7]string{
 		gists.PackageJSON,
 		gists.IndexHTML,
 		gists.IndexTS,
+		gists.RouterTS,
 		gists.TemplateVUE,
+		gists.AppVUE,
 		gists.Gitignore,
 	}
 
@@ -63,9 +73,6 @@ var (
 		BootstrapSCSS: gists.BootstrapSCSS,
 		Dependencies:  []string{"bootstrap", "@popperjs/core"},
 	}
-
-	css       CSS
-	cssInsert = "html { scrollbar-gutter: stable both-edges; }\n"
 )
 
 func main() {
@@ -82,7 +89,9 @@ func main() {
 	// createP5 := flag.Bool("p", false, "select P5 Project")
 	createVanilla := flag.Bool("v", false, "select vanilla CSS")
 
-	// Check all requirements for a command
+	// =========================================================================== //
+	// CHECK ALL REQUIREMENTS FOR A COMMAND
+	// =========================================================================== //
 	{
 		if len(os.Args) > Maxargs || len(os.Args) == 1 {
 			Warn.Println("Invalid number of arguments provided!")
@@ -102,65 +111,87 @@ func main() {
 		dirExists := !os.IsNotExist(err) && info.IsDir()
 
 		if dirExists {
-			Warn.Println("A directory already exists for " + "./" + ProjectName + " in current directory!")
+			Warn.Println("A directory already exists for " + ProjectName + " in current directory!")
 			os.Exit(1)
 		}
 	}
 
-	// Initialize Project Repository
+	// =========================================================================== //
+	// INITIALIZE PROJECT REPOSITORY
+	// =========================================================================== //
+
 	Execution.Println("Creating project " + ProjectName)
 	if err := os.MkdirAll(ProjectName+"/src/components", 0750); err != nil {
 		Warn.Println("Error occurred. Check logs stinky!")
 		log.Fatal(err)
 	}
-	Exec("git init " + ProjectName)
+	cmd = "git init " + ProjectName
+	Exec(&cmd)
 	Action.Println("Git repo initialized!")
 
-	// Install all core dependencies
+	// =========================================================================== //
+	// INSTALL ALL CORE DEPENDENCIES
+	// =========================================================================== //
+
 	SpinWrap(
 		spinner,
 		11,
 		" Installing core dependencies",
 		func() {
-			fullDependencyList := ""
+			var sb strings.Builder
 			for _, d := range coreDependencies {
 				if d != "parcel" {
-					fullDependencyList += fullDependencyList + d + " "
+					sb.WriteString(d + " ")
 				}
 			}
 
-			Exec(cd + "yarn add --dev " + coreDependencies[0])
-			Exec(cd + "yarn add " + fullDependencyList)
+			cmd = cd + "yarn add --dev " + coreDependencies[0] + " " + cd + "yarn add " + sb.String()
+			Exec(&cmd)
 		},
 	)
 
 	spinner.Frequency(45 * time.Millisecond)
 	p := fmt.Sprintf("%s/", ProjectName)
 
-	// Download and organize gists
+	// =========================================================================== //
+	// DOWNLOAD AND ORGANIZE ALL GISTS
+	// =========================================================================== //
+
+	TmpDir, err := os.MkdirTemp("", "neosvuecli")
+	if err != nil {
+		os.RemoveAll(TmpDir)
+		log.Fatal(err)
+	}
+
+	// Allow reading and writing into tmpDir
+	cmd = "chmod 777 " + TmpDir
+	Exec(&cmd)
+
+	defer os.RemoveAll(TmpDir)
+
 	SpinWrap(
 		spinner,
 		43,
-		" Downloading gists", // Maybe do with goroutines?
+		" Downloading gists",
 		func() {
-
 			// IDs are the names of the downloaded folders
-
-			clone, ids := gists.Clone(requiredGists[:])
+			var clone *string
+			var ids *[]string
+			clone, ids = gists.Clone(requiredGists[:], TmpDir)
 			Exec(clone)
-
-			// With IDs, move contents out of folders
-			// I had done this before with Exec(), but this is more
-			// idiomatic, and also simpler
-
-			for _, id := range ids {
-				files, _ := os.ReadDir(id)
-				os.Rename(
-					fmt.Sprintf("./%s/%s", id, files[1].Name()),
+			for _, id := range *ids {
+				files, _ := os.ReadDir(TmpDir + "/" + id)
+				err := os.Rename(
+					fmt.Sprintf("%s/%s/%s", TmpDir, id, files[1].Name()),
 					fmt.Sprintf("./%s/%s", ProjectName, files[1].Name()),
 				)
 
-				// Then delete gist download folders
+				if err != nil {
+					os.RemoveAll(TmpDir)
+					log.Fatal(err)
+				}
+
+				// Delete gist download folders
 				if err := os.RemoveAll(id); err != nil {
 					Warn.Println(err)
 					os.Exit(1)
@@ -170,35 +201,36 @@ func main() {
 	)
 
 	spinner.Frequency(80 * time.Millisecond)
-	Exec("cp " + p + "Template.vue " + p + "src/")
 
-	// Move and organize downloaded files
+	// =========================================================================== //
+	// MOVE AND ORGANIZE DOWNLOADED FILES
+	// =========================================================================== //
+
 	SpinWrap(
 		spinner,
 		27,
 		" Moving things around",
 		func() {
 			Exec(
-				func() string {
-
-					var sb strings.Builder
-					commands := [4]string{
-						"mv " + p + "src/Template.vue " + p + "src/App.vue",
+				func() *string {
+					commands := [5]string{
+						"mv " + p + "App.vue " + p + "src/",
 						"mv " + p + "Template.vue " + p + "src/components/",
 						"mv " + p + "index.ts " + p + "src/",
+						"mv " + p + "router.ts " + p + "src/",
 						"mv " + p + "temp.gitignore " + p + `.gitignore`,
 					}
-
-					for _, cmd := range commands {
-						sb.WriteString(cmd + " && ")
-					}
-					return sb.String()[0 : len(sb.String())-4]
+					final := strings.Join(commands[:], " && ")
+					return &final
 				}(),
 			)
 		},
 	)
 
-	// Create CSS files
+	// =========================================================================== //
+	// CREATE CSS FILES
+	// =========================================================================== //
+
 	SpinWrap(
 		spinner,
 		44,
@@ -210,27 +242,33 @@ func main() {
 			} else if *createBootstrap {
 				css.Bootstrap = bootstrap
 			} else if *createBulma {
-				Exec("cd " + ProjectName + " && yarn add bulma")
-				Insert("@import '~bulma';\n" + cssInsert)
+				cmd = cd + "yarn add bulma"
+				Exec(&cmd)
+				insertText = "@import '~bulma';\n" + cssInsert
+				Insert(&insertText)
 			} else if *createSimple {
-				Exec("cd " + ProjectName + " && yarn add simpledotcss")
-				Insert("@import url('../node_modules/simpledotcss/simple.min.css');\n\n" + cssInsert)
+				cmd = cd + "yarn add simpledotcss"
+				Exec(&cmd)
+				insertText = "@import url('../node_modules/simpledotcss/simple.min.css');\n\n" + cssInsert
+				Insert(&insertText)
 			} else if *createVanilla {
-				Insert(cssInsert)
+				Insert(&cssInsert)
 			}
 		},
 	)
 
-	// Initalize yarn
+	// =========================================================================== //
+	// INITIALIZE YARN
+	// =========================================================================== //
 	SpinWrap(
 		spinner,
 		31,
-		" Initalizing yarn",
+		" Initializing yarn",
 		func() {
-			Exec("cd " + ProjectName + " && yarn")
-			Exec("cd " + ProjectName + " && touch README.md")
+			cmd = cd + "yarn && " + cd + "touch README.md"
+			Exec(&cmd)
 		},
 	)
 
-	Joy.Println("Environment setup complete")
+	Joy.Print("Environment setup complete")
 }

@@ -11,7 +11,6 @@ import (
 // can display live output line by line via carriage return
 
 var (
-	// Console colors
 	Warn          = color.New(color.FgRed, color.Bold)
 	Joy           = color.New(color.FgYellow, color.Bold)
 	Action        = color.New(color.FgHiGreen, color.Bold)
@@ -28,10 +27,10 @@ var (
 	}
 )
 
-func SpinWrap(sp *yacspin.Spinner, c int, s string, f func()) {
-	sp.CharSet(yacspin.CharSets[c])
-	sp.Prefix(s + " ")
-	sp.Start()
+func SpinWrap(spinner *yacspin.Spinner, spinnerType int, message string, f func()) {
+	spinner.CharSet(yacspin.CharSets[spinnerType])
+	spinner.Prefix(message + " ")
+	spinner.Start()
 	f()
-	sp.Stop()
+	spinner.Stop()
 }

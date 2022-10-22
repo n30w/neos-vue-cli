@@ -7,27 +7,27 @@ import (
 	"os/exec"
 )
 
-// Command wrapper with error handling
-func Exec(s string) {
+// Exec is a command wrapper with error handling
+func Exec(s *string) {
 	// Go Logging an error: https://www.honeybadger.io/blog/golang-logging/
 	file, _ := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 
 	// The good stuff
-	cmd := exec.Command("bash", "-c", s)
-	_, err := cmd.Output()
+	cmd := exec.Command("bash", "-c", *s)
+	o, err := cmd.Output()
 	log.SetOutput(file)
 	if err != nil {
-		Warn.Println("Error occured, please check logs 😭")
+		Warn.Println("Error occurred, please check logs 😭")
 		Warn.Fprintln(cmd.Stderr)
-		Warn.Printf("Removing %s", ProjectName)
+		Warn.Printf("Removing %s\n", ProjectName)
 		os.RemoveAll(ProjectName)
-		log.Fatal(err)
+		log.Fatal(o, err)
 	}
 }
 
-// Inserts a file with a specified line. Useful for CSS.
+// Insert inserts a file with a specified line. Useful for CSS.
 // Function based on https://zetcode.com/golang/writefile/
-func Insert(text string) {
+func Insert(text *string) {
 	f, err := os.Create(fmt.Sprintf("%s/src/index.scss", ProjectName))
 
 	if err != nil {
@@ -36,11 +36,10 @@ func Insert(text string) {
 
 	defer f.Close()
 
-	_, err2 := f.WriteString(fmt.Sprintf("%s\n", text))
-
-	if err2 != nil {
-		log.Fatal(err2)
+	if _, err := f.WriteString(fmt.Sprintf("%s\n", *text)); err != nil {
+		log.Fatal(err)
 	}
+
 }
 
 // Go Formatting string literal: https://stackoverflow.com/questions/17779371/golang-given-a-string-output-an-equivalent-golang-string-literal

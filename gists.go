@@ -1,24 +1,29 @@
 package main
 
-import "fmt"
+import (
+	"strings"
+)
 
 // Gists to download
 type Gists struct {
-	PackageJSON, IndexHTML, IndexTS, TemplateVUE, Gitignore, Postcssrc, PopperJS, BootstrapSCSS, TailwindSCSS, Tailwindconf string
+	PackageJSON, IndexHTML, IndexTS, RouterTS, SketchTS, TemplateVUE, AppVUE, SketchVUE, Gitignore, Postcssrc, PopperJS, BootstrapSCSS, TailwindSCSS, Tailwindconf string
 }
 
-func (g *Gists) Clone(gists []string) (string, []string) {
-	final := ""
+// Clone retruns pointers to a command string and a slice of ids (folder names).
+func (g *Gists) Clone(gists []string, tmp string) (*string, *[]string) {
 	ids := []string{}
-	gc := "git clone " // TODO: Make this thing a temp directory via os pkg
-	for _, gist := range gists {
-		final += gc + fmt.Sprintf("%s && ", gist)
+	gc := "git clone "
+
+	for i, gist := range gists {
+		gists[i] = gc + gist
 		ids = append(ids, gist[24:len(gist)-4])
 	}
-	return final[0 : len(final)-4], ids
+
+	final := "cd " + tmp + " && " + strings.Join(gists, " && ")
+	return &final, &ids
 }
 
-// Organizations for CSS data, like Tailwind and Bootstrap
+// CSS struct contains organizations for CSS data, like Tailwind and Bootstrap
 type CSS struct {
 	Tailwind  Tailwind
 	Bootstrap Bootstrap
