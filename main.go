@@ -44,7 +44,7 @@ var (
 		Tailwindconf:  "https://gist.github.com/ed36d206090bd1faeea8d0c1921e19fc.git",
 	}
 
-	requiredGists = [7]string{
+	requiredGists = [...]string{
 		gists.PackageJSON,
 		gists.IndexHTML,
 		gists.IndexTS,
@@ -54,7 +54,7 @@ var (
 		gists.Gitignore,
 	}
 
-	coreDependencies = [4]string{
+	coreDependencies = [...]string{
 		"parcel",
 		"vue",
 		"vue-router@4",
@@ -92,6 +92,7 @@ func main() {
 	// =========================================================================== //
 	// CHECK ALL REQUIREMENTS FOR A COMMAND
 	// =========================================================================== //
+
 	{
 		if len(os.Args) > Maxargs || len(os.Args) == 1 {
 			Warn.Println("Invalid number of arguments provided!")
@@ -213,7 +214,7 @@ func main() {
 		func() {
 			Exec(
 				func() *string {
-					commands := [5]string{
+					commands := [...]string{
 						"mv " + p + "App.vue " + p + "src/",
 						"mv " + p + "Template.vue " + p + "src/components/",
 						"mv " + p + "index.ts " + p + "src/",
@@ -239,6 +240,8 @@ func main() {
 			flag.Parse()
 			if *createTailwind {
 				css.Tailwind = tailwind
+				cmd = cd + "yarn add --dev tailwindcss postcss && npx tailwindcss init"
+				Exec(&cmd)
 			} else if *createBootstrap {
 				css.Bootstrap = bootstrap
 			} else if *createBulma {
